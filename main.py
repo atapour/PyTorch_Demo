@@ -5,6 +5,7 @@ from torchvision import datasets, transforms
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn.metrics as metrics
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -49,7 +50,7 @@ def plot_confusion_matrix(gt, pred, classes, normalize=False, title='Confusion M
 # --------------------------------
 # Hyper-Parameters
 learning_rate = 0.001 # Initial learning rate
-training_epochs = 15 # Number of epochs to train
+training_epochs = 5 # Number of epochs to train
 batch_size = 100 # Number of images per batch
 display_step = 1 # How often to output model metrics during training
 
@@ -103,79 +104,74 @@ model = Multilayer_Perceptron().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
 
-# training function:
-def train():
-    # Set model to training mode
-    model.train()
-    
-    for epoch in range(training_epochs):
-    # Loop over each batch from the training set
-        for batch_idx, (img, lbl) in enumerate(train_loader):
-            # Copy image data to GPU if needed
-            img = img.to(device)
-            lbl = lbl.to(device)
 
-            # Zero gradient buffers
-            optimizer.zero_grad() 
-            
-            # Pass image data through the network
-            output = model(img)
+# Set model to training mode
+model.train()
 
-            # Calculate loss
-            loss = criterion(output, lbl)
+for epoch in range(training_epochs):
+# Loop over each batch from the training set
+    for batch_idx, (img, lbl) in enumerate(train_loader):
+        # Copy image data to GPU if needed
+        img = img.to(device)
+        lbl = lbl.to(device)
 
-            # Backpropagate
-            loss.backward()
-            
-            # Update weights
-            optimizer.step()
+        # Zero gradient buffers
+        optimizer.zero_grad() 
         
-        if epoch % display_step == 0:
-            print("Epoch:", '%04d' % (epoch+1), "cost={:.9f}".format(loss.item()))
-            # print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-            #     epoch, batch_idx * len(data), len(train_loader.dataset),
-            #     100. * batch_idx / len(train_loader), loss.data.item()))
+        # Pass image data through the network
+        output = model(img)
 
+        # Calculate loss
+        loss = criterion(output, lbl)
 
-def validate():
-    preds, gts = [], []
-    model.eval()
-    val_loss, correct = 0, 0
-
-    for data, target in test_loader:
-
-        data = data.to(device)
-        target = target.to(device)
-
-        gts.append(target.item())
-
-
-        output = model(data)
-        val_loss += criterion(output, target).data.item()
-
-        _, pred = torch.max(output, dim=1)
-        # pred = output.data.max(1)[1] # get the index of the max log-probability
-
-        preds.append(pred)
-        correct += pred.eq(target).cpu().sum()
-
-    # val_loss /= len(test_loader)
-    # loss_vector.append(val_loss)
-
-    accuracy = 100. * correct.to(torch.float32) / len(test_loader.dataset)
-    # accuracy_vector.append(accuracy)
+        # Backpropagate
+        loss.backward()
+        
+        # Update weights
+        optimizer.step()
     
-    print("Accuracy:", accuracy)
+    if epoch % display_step == 0:
+        print("Epoch:", '%04d' % (epoch+1), "Loss = {:.9f}".format(loss.item()))
+        # print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+        #     epoch, batch_idx * len(data), len(train_loader.dataset),
+        #     100. * batch_idx / len(train_loader), loss.data.item()))
 
-    plot_confusion_matrix(gts, preds, test_dataset.classes)
-
-    # print('\nValidation set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        # val_loss, correct, len(test_loader.dataset), accuracy))
-
-
-# lossv, accv = [], []
-train()
 print("Optimization Finished!")
 
-# validate(lossv, accv)
-validate()
+
+
+preds, gts = [], []
+model.eval()
+val_loss, correct = 0, 0
+
+for data, target in test_loader:
+
+    data = data.to(device)
+    target = target.to(device)
+
+    gts.append(target.tolist())
+
+
+    output = model(data)
+    val_loss += criterion(output, target).data.item()
+
+    _, pred = torch.max(output, dim=1)
+    # pred = output.data.max(1)[1] # get the index of the max log-probability
+
+    preds.append(pred.tolist())
+    correct += pred.eq(target).cpu().sum()
+
+# val_loss /= len(test_loader)
+# loss_vector.append(val_loss)
+
+accuracy = 100. * correct.to(torch.float32) / len(test_loader.dataset)
+# accuracy_vector.append(accuracy)
+
+print("Accuracy:", accuracy.item())
+
+# plot_confusion_matrix(gts, preds, test_dataset.classes)
+
+# print('\nValidation set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    # val_loss, correct, len(test_loader.dataset), accuracy))
+
+
