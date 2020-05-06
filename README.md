@@ -31,3 +31,14 @@ $ python pytorch_mlp.py
  - Select File -> Upload Notebook...
  - Drag and drop or browse to select the notebook you wish to use (`PyTorch_MLP.ipynb`).
 
+
+ ### Important Note
+
+ - As the code is specifically written to use a GPU, make sure you enable the use of a GPU in [Google Colab](https://colab.research.google.com).
+
+ - Select Runtime -> Change runtime type -> GPU
+
+ - Alternatively, you can change the first code cell of the notebook to use a CPU to run the code by including `device = torch.device('cpu')`.
+
+
+
