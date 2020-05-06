@@ -14,6 +14,38 @@ else:
 print('PyTorch version:', torch.__version__, ' Device:', device)
 # --------------------------------
 
+# -----------------------------------------
+# plots a confusion matrix
+def plot_confusion_matrix(gt, pred, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
+
+    cm = metrics.confusion_matrix(gt, pred)
+    np.set_printoptions(precision=2)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+
+    plt.xticks(tick_marks, fontsize=3)
+    plt.yticks(tick_marks, fontsize=3)
+
+    plt.grid(True)
+
+    plt.ylabel('Ground Truth')
+    plt.xlabel('Predictions')
+    plt.tight_layout()
+    plt.savefig(f"cm.pdf", bbox_inches='tight')
+    plt.close()
+#-----------------------------------------
+
 # --------------------------------
 # Hyper-Parameters
 learning_rate = 0.001 # Initial learning rate
@@ -105,27 +137,45 @@ def train():
             #     100. * batch_idx / len(train_loader), loss.data.item()))
 
 
-def validate(loss_vector, accuracy_vector):
+def validate():
+    preds, gts = [], []
     model.eval()
     val_loss, correct = 0, 0
+
     for data, target in test_loader:
+
         data = data.to(device)
         target = target.to(device)
+
+        gts.append(target.item())
+
+
         output = model(data)
         val_loss += criterion(output, target).data.item()
-        pred = output.data.max(1)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data).cpu().sum()
 
-    val_loss /= len(test_loader)
-    loss_vector.append(val_loss)
+        _, pred = torch.max(output, dim=1)
+        # pred = output.data.max(1)[1] # get the index of the max log-probability
+
+        preds.append(pred)
+        correct += pred.eq(target).cpu().sum()
+
+    # val_loss /= len(test_loader)
+    # loss_vector.append(val_loss)
 
     accuracy = 100. * correct.to(torch.float32) / len(test_loader.dataset)
-    accuracy_vector.append(accuracy)
+    # accuracy_vector.append(accuracy)
     
-    print('\nValidation set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        val_loss, correct, len(test_loader.dataset), accuracy))
+    print("Accuracy:", accuracy)
+
+    plot_confusion_matrix(gts, preds, test_dataset.classes)
+
+    # print('\nValidation set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        # val_loss, correct, len(test_loader.dataset), accuracy))
 
 
-lossv, accv = [], []
+# lossv, accv = [], []
 train()
-validate(lossv, accv)
+print("Optimization Finished!")
+
+# validate(lossv, accv)
+validate()
