@@ -26,6 +26,42 @@ device = torch.device('cuda')
       
 print('PyTorch version:', torch.__version__, ' Device:', device)
 
+
+
+#-----------------------------------------
+# plots a confusion matrix
+def plot_confusion_matrix(gt, pred, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
+
+    cm = metrics.confusion_matrix(gt, pred)
+    np.set_printoptions(precision=2)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+
+    plt.xticks(tick_marks, fontsize=3)
+    plt.yticks(tick_marks, fontsize=3)
+
+    plt.grid(True)
+
+    plt.ylabel('Ground Truth')
+    plt.xlabel('Predictions')
+    plt.tight_layout()
+    plt.savefig(f"cm.pdf", bbox_inches='tight')
+    plt.close()
+#-----------------------------------------
+
+
+
 """Here are the relevant network parameters and graph input for context."""
 
 # Hyper-Parameters
@@ -57,7 +93,7 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            shuffle=True)
 
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, 
-                                                batch_size=batch_size, 
+                                                batch_size=1, 
                                                 shuffle=False)
 
 """### Model Creation
@@ -126,8 +162,10 @@ for epoch in range(training_epochs):
 
 print("Optimization Finished!")
 
-# set model to evaluation mode
+# list of labels and outputs to draw the confusion matrix
+preds, gts = [], []
 
+# set model to evaluation mode
 model.eval()
 
 correct = 0
@@ -143,6 +181,11 @@ for test_img, test_lbl in test_loader:
 
     correct += pred.eq(test_lbl).cpu().sum()
 
+    gts.append(test_lbl.item())
+    preds.append(pred.item())
+
 accuracy = 100. * correct.to(torch.float32) / len(test_loader.dataset)
+
+plot_confusion_matrix(gts, preds, test_dataset.classes)
 
 print("\nAccuracy:", accuracy.item())
