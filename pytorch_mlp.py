@@ -26,42 +26,6 @@ device = torch.device('cuda')
       
 print('PyTorch version:', torch.__version__, ' Device:', device)
 
-
-
-#-----------------------------------------
-# plots a confusion matrix
-def plot_confusion_matrix(gt, pred, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
-
-    cm = metrics.confusion_matrix(gt, pred)
-    np.set_printoptions(precision=2)
-
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
-    else:
-        print('Confusion matrix, without normalization')
-
-    print(cm)
-
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-
-    plt.xticks(tick_marks, fontsize=3)
-    plt.yticks(tick_marks, fontsize=3)
-
-    plt.grid(True)
-
-    plt.ylabel('Ground Truth')
-    plt.xlabel('Predictions')
-    plt.tight_layout()
-    plt.savefig(f"cm.pdf", bbox_inches='tight')
-    plt.close()
-#-----------------------------------------
-
-
-
 """Here are the relevant network parameters and graph input for context."""
 
 # Hyper-Parameters
@@ -186,6 +150,35 @@ for test_img, test_lbl in test_loader:
 
 accuracy = 100. * correct.to(torch.float32) / len(test_loader.dataset)
 
-plot_confusion_matrix(gts, preds, test_dataset.classes)
-
 print("\nAccuracy:", accuracy.item())
+
+"""We can draw the confusion matrix to get better insight into the performance of the model."""
+
+# Function to plot the confusion matrix:
+def plot_confusion_matrix(gt, pred, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
+
+    cm = metrics.confusion_matrix(gt, pred)
+    np.set_printoptions(precision=2)
+
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+
+    plt.xticks(tick_marks, fontsize=3)
+    plt.yticks(tick_marks, fontsize=3)
+
+    plt.grid(True)
+
+    plt.ylabel('Ground Truth')
+    plt.xlabel('Predictions')
+    plt.tight_layout()
+    plt.savefig(f"cm.pdf", bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+# plot the confusion matrix
+plot_confusion_matrix(gts, preds, test_dataset.classes)
